@@ -43,12 +43,10 @@
 #define HHDR_SUCCESS                    (unsigned char)9
 /*=======================================================================*/
 typedef unsigned char  HHDR_Return_Code;
-
+typedef unsigned char  HHDR_UChar;
 typedef unsigned char  HHDR_Bool;
-
 typedef char*          HHDR_String;
 typedef char           HHDR_Char;
-typedef unsigned char  HHDR_UChar;
 
 typedef unsigned short HHDR_UShort;
 

@@ -1,62 +1,88 @@
 #include "./Entries.h"
 
-Ent_Return_Code entrie_push(Entries* entries, Ent_CString key, Ent_Any value, Ent_UShort value_size) {
-	if(entries == NULL || key == NULL || (value != NULL && value_size == 0))
-		return ENTRY_ERROR_INVALID_PARAM;
+Ent_Return_Code ent_push(Entries* entries, const Ent_String key, const Ent_Any value, const Ent_UChar value_size) {
+	if(entries == NULL || key == NULL || ((value != NULL && value_size == 0) || (value == NULL && value_size > 0)))
+		return ENT_ERROR_INVALID_PTR;
+
+	Entrie** items = NULL;
+	Entrie* item = NULL;
+	Ent_ULLong key_length = 0;
 
 	if(entries->items == NULL) {
-		entries->items = (Entrie**)malloc(sizeof(Entrie*));
+		// Entrie array is empty, alloc memory for first element.
+		items = (Entrie**)malloc(sizeof(Entrie*));
+		if(items == NULL)
+			return ENT_ERROR_MEMALLOC;
 	}	else {
-		entries->items = (Entrie**)realloc(entries->items, (entries->size + 1) * sizeof(Entrie*));
-		if(entries->items == NULL)
-			return ENTRY_ERROR_MEMALLOC;
-	}
-
-	Ent_ULLong key_length = strlen(key) + 1;
-	Ent_ULLong size_of_entrie = sizeof(Entrie);
-	Entrie* item = (Entrie*)malloc(size_of_entrie + key_length + value_size);
-	if(entries->items == NULL)
-		return ENTRY_ERROR_MEMALLOC;
-
-	Ent_String key_position = (Ent_String)item + size_of_entrie;
-	Ent_Any value_position = key_position + key_length;
-
-	item->key = key_position;
-	mempcpy(item->key, key, key_length);
-
-	if(value == NULL) {
-		item->value = NULL;
-	} else {
-		item->value = value_position;
-		mempcpy(item->value, value, value_size);
+		// Realloc new memory for one new element (pointer on element).
+		items = (Entrie**)realloc(entries->items, (entries->size + 1) * sizeof(Entrie*));
+		if(items == NULL)
+			return ENT_ERROR_MEMALLOC;
 	}
 	
+	key_length = sb_string_length(key) + 1;
+	if(key_length > ENT_KEY_MAX_LENGTH)
+		return ENT_ERROR_INVALID_KEY_LENGTH;
+
+	item = (Entrie*)malloc(sizeof(Entrie) + key_length + value_size);
+	if(item == NULL)
+		return ENT_ERROR_MEMALLOC;
+
+	item->key = (Ent_String)item + sizeof(Entrie);
+	memcpy(item->key, key, key_length);
+
+	if(value == NULL) {
+		// Save null value in to the entrie.
+		item->value = NULL;
+	} else {
+		item->value = item->key + key_length;
+		memcpy(item->value, value, value_size);
+	}
+
+	entries->items = items;
 	entries->items[entries->size++] = item;
 
-	return ENTRY_SUCCES;
+	return ENT_SUCCESS;
 }
 
-Ent_Return_Code entrie_pop(Entries entries) {
-	if(entries.items == NULL)
-		return ENTRY_ERROR_NULL_PTR;
+Ent_Return_Code ent_pop(Entries* entries) {
+	if(entries == NULL || entries->items == NULL)
+		return ENT_ERROR_INVALID_PTR;
+	else if(entries->size <= 0)
+		return ENT_ERROR_INVALID_SIZE;
 
-	free(entries.items[entries.size - 1]);
-	entries.items[entries.size - 1] = NULL;
-	entries.size--;
+	Entrie** items = NULL;
 
-	if(entries.size == 0)
-		free(entries.items);
+	entries->size--;
 
-	return ENTRY_SUCCES;
+	// Realloc the memory with new size (without the last element).
+	items = (Entrie**)realloc(entries->items, entries->size * sizeof(Entrie*));
+	if(items == NULL)
+		return ENT_ERROR_MEMALLOC;
+	entries->items = items;
+
+	// Remove free items when entrie array is empty.
+	if(entries->size == 0) {
+		free(entries->items);
+		entries->items = NULL;
+	}
+
+	return ENT_SUCCESS;
 }
 
-Ent_Return_Code entrie_delete(Entries entries) {
-	if(entries.items == NULL)
-		return ENTRY_ERROR_NULL_PTR;
+Ent_Return_Code ent_free(Entries* entries) {
+	if(entries == NULL || entries->items == NULL)
+		return ENT_ERROR_INVALID_PTR;
 
-	for(Ent_ULLong index = 0; index < entries.size; index++)
-		free(entries.items[index]);
-	free(entries.items);
+	// Remove free items when entrie is empty.
+	for(Ent_UInt index = 0; index < entries->size; index++) {
+		free(entries->items[index]);
+		entries->items[index] = NULL;
+	}
+		
+	free(entries->items);
+	entries->items = NULL;
+	entries->size = 0;
 
-	return ENTRY_SUCCES;
+	return ENT_SUCCESS;
 }

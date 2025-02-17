@@ -36,13 +36,15 @@ HHDR_Return_Code hhdr_parse_head(HHDR_Header header, Map* map, HHDR_UShort* skip
 			HHDR_Char status_code[5] = {0};
 			HHDR_Char status_text[35] = {0};
 		
+			// TODO: f_spec - header.string, buffer overflow check
 			memcpy(http_version, header.string, f_space - header.string);
 			http_version[f_space - header.string] = '\0';
-			
+			// TODO: f_spec - header.string, buffer overflow check
 			memcpy(status_code, f_space + 1, s_space - f_space - 1);
 			status_code[s_space - f_space] = '\0';
 			
 			hhdr_head_collect_last(s_space + 1, status_text);
+			// TODO: f_spec - header.string, buffer overflow check
 			HHDR_UChar status_text_length = strlen(status_text);
 			status_text[status_text_length - 1] = '\0';
 
@@ -58,14 +60,17 @@ HHDR_Return_Code hhdr_parse_head(HHDR_Header header, Map* map, HHDR_UShort* skip
 			// Request  header GET /index.html HTTP/1.1
 			HHDR_Char method[3] = {0};
 			HHDR_Char path[550] = {0};
-		
+			
+			// TODO: f_spec - header.string, buffer overflow check
 			memcpy(method, header.string, f_space - header.string);
 			method[f_space - header.string] = '\0';
 			
+			// TODO: f_spec - header.string, buffer overflow check
 			memcpy(path, f_space + 1, s_space - f_space - 1);
 			path[s_space - f_space] = '\0';
 			
 			hhdr_head_collect_last(s_space + 1, http_version);
+			// TODO: f_spec - header.string, buffer overflow check
 			HHDR_UChar http_version_length = strlen(http_version);
 			http_version[http_version_length - 1] = '\0';
 			
@@ -99,6 +104,7 @@ HHDR_Return_Code hhdr_head_collect_last(HHDR_String header, HHDR_String buffer) 
 		last_size++;
 	}
 
+	// TODO: f_spec - header.string, buffer overflow check
 	memcpy(buffer, header - last_size, last_size);
 
 	return HHDR_SUCCESS;
